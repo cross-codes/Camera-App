@@ -1,4 +1,4 @@
-package com.github.cross-codes;
+package com.github.cross;
 
 import static org.junit.Assert.assertTrue;
 

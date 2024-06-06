@@ -4,25 +4,32 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>com.github.cross-codes</groupId>
-  <artifactId>java-camera</artifactId>
+  <groupId>com.github.cross</groupId>
+  <artifactId>javaCamera</artifactId>
   <version>1.0-SNAPSHOT</version>
 
-  <name>java-camera</name>
+  <name>javaCamera</name>
   <url>http://www.github.com/cross-codes/java-camera</url>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <maven.compiler.source>1.7</maven.compiler.source>
-    <maven.compiler.target>1.7</maven.compiler.target>
+    <maven.compiler.source>21</maven.compiler.source>
+    <maven.compiler.target>21</maven.compiler.target>
   </properties>
 
   <dependencies>
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <version>4.11</version>
+      <version>4.13.2</version>
       <scope>test</scope>
+    </dependency>
+
+    <!--Web camera library-->
+    <dependency>
+      <groupId>com.github.sarxos</groupId>
+      <artifactId>webcam-capture</artifactId>
+      <version>0.3.12</version>
     </dependency>
   </dependencies>
 
