@@ -58,8 +58,6 @@ public class WebCamHandler extends Application {
   private Button btnCameraResume;
   private Button btnCameraExit;
 
-  private StringBuffer imageName = new StringBuffer(imageLocation);
-
   // A Webcam info class
   private class WebCamInfo {
 
@@ -130,7 +128,7 @@ public class WebCamHandler extends Application {
     bottomCameraControlPane.setVgap(10);
     bottomCameraControlPane.setPrefHeight(40);
     bottomCameraControlPane.setOpacity(0.9);
-    bottomCameraControlPane.setDisable(true);
+    bottomCameraControlPane.setDisable(false);
     root.setBottom(bottomCameraControlPane);
     createCameraControls();
 
@@ -279,6 +277,7 @@ public class WebCamHandler extends Application {
     Thread th = new Thread(task);
     th.setDaemon(true);
     th.start();
+    btnCameraPicture.setDisable(false);
     imgWebCamCapturedImage.imageProperty().bind(imageProperty);
   }
 
@@ -329,6 +328,9 @@ public class WebCamHandler extends Application {
             exit();
           }
         });
+    btnCameraResume.setDisable(true);
+    btnCameraPicture.setDisable(true);
+    btnCameraExit.setDisable(false);
     bottomCameraControlPane.getChildren().add(btnCameraResume);
     bottomCameraControlPane.getChildren().add(btnCameraPicture);
     bottomCameraControlPane.getChildren().add(btnCameraExit);
@@ -337,10 +339,12 @@ public class WebCamHandler extends Application {
   protected void clickPicture() throws IOException {
     LocalDateTime date = java.time.LocalDateTime.now();
     String dateStr = date.format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"));
+    StringBuffer fileNameBuffer = new StringBuffer(imageLocation);
+    fileNameBuffer.append("Camera-").append(dateStr).append(".jpg");
     ImageIO.write(
         webcam.getImage(),
         "JPG",
-        new File(imageName.append("Camera-").append(dateStr).append(".jpg").toString()));
+        new File(fileNameBuffer.toString()));
     stopCamera = true;
     btnCameraResume.setDisable(false);
     btnCameraPicture.setDisable(true);
@@ -354,9 +358,11 @@ public class WebCamHandler extends Application {
 
   protected void exit() {
     stopCamera = true;
-    webcam.close();
-    btnCameraResume.setDisable(true);
-    btnCameraPicture.setDisable(true);
+    try {
+      webcam.close();
+    } catch (Exception e) {
+      System.exit(0);
+    }
     System.exit(0);
   }
 }
