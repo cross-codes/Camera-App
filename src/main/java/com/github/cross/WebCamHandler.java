@@ -3,6 +3,8 @@ package com.github.cross;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.imageio.ImageIO;
@@ -33,11 +35,32 @@ import javafx.scene.image.ImageView;
 import javafx.scene.image.WritableImage;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.FlowPane;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
 import javafx.stage.Stage;
 
 public class WebCamHandler extends Application {
 
+  // Default image storage location
   public static String imageLocation = "/home/cross/Pictures";
+  Font juliaMono;
+
+  private FlowPane bottomCameraControlPane;
+  private FlowPane topPane;
+  private BorderPane root;
+  private String cameraListPromptText = "Available cameras";
+  private ImageView imgWebCamCapturedImage;
+  private Webcam webcam = null;
+  private boolean stopCamera = false;
+  private ObjectProperty<Image> imageProperty = new SimpleObjectProperty<Image>();
+  private BorderPane webCamPane;
+  private Button btnCameraPicture;
+  private Button btnCameraResume;
+  private Button btnCameraExit;
+
+  private StringBuffer imageName = new StringBuffer(imageLocation);
+
+  // A Webcam info class
   private class WebCamInfo {
 
     private String webCamName;
@@ -65,52 +88,55 @@ public class WebCamHandler extends Application {
     }
   }
 
-  private FlowPane bottomCameraControlPane;
-  private FlowPane topPane;
-  private BorderPane root;
-  private String cameraListPromptText = "Choose Camera";
-  private ImageView imgWebCamCapturedImage;
-  private Webcam webCam = null;
-  private boolean stopCamera = false;
-  private ObjectProperty<Image> imageProperty = new SimpleObjectProperty<Image>();
-  private BorderPane webCamPane;
-  private Button btnCamreaStop;
-  private Button btnCamreaStart;
-  private Button btnCameraDispose;
-
-  private StringBuilder imageName = new StringBuilder(imageLocation);
+  public static void main(String[] args) {
+    // A method from the "Application" class
+    launch(args); // Calls the start method
+  }
 
   @Override
   public void start(Stage primaryStage) {
 
-    primaryStage.setTitle("Camera App");
+    // Load the font
+    juliaMono = Font.loadFont(getClass().getResourceAsStream("/fonts/JuliaMono-Regular.ttf"), 14);
+
+    primaryStage.setTitle("Camera");
 
     root = new BorderPane();
+    // Top pane: Info message and dropdown for webcam choices
     topPane = new FlowPane();
+    // Styles
+    topPane.setStyle("-fx-background-color: #0e0f12;");
     topPane.setAlignment(Pos.CENTER);
-    topPane.setHgap(20);
+    topPane.setHgap(30);
     topPane.setOrientation(Orientation.HORIZONTAL);
     topPane.setPrefHeight(40);
+    topPane.setOpacity(0.9);
     root.setTop(topPane);
+
+    // Camera window
     webCamPane = new BorderPane();
     webCamPane.setStyle("-fx-background-color: #ccc;");
     imgWebCamCapturedImage = new ImageView();
     webCamPane.setCenter(imgWebCamCapturedImage);
     root.setCenter(webCamPane);
     createTopPanel();
+
+    // Bottom pane: Buttons
     bottomCameraControlPane = new FlowPane();
+    bottomCameraControlPane.setStyle("-fx-background-color: #0e0f12;");
     bottomCameraControlPane.setOrientation(Orientation.HORIZONTAL);
     bottomCameraControlPane.setAlignment(Pos.CENTER);
-    bottomCameraControlPane.setHgap(20);
+    bottomCameraControlPane.setHgap(30);
     bottomCameraControlPane.setVgap(10);
     bottomCameraControlPane.setPrefHeight(40);
+    bottomCameraControlPane.setOpacity(0.9);
     bottomCameraControlPane.setDisable(true);
-    createCameraControls();
     root.setBottom(bottomCameraControlPane);
+    createCameraControls();
 
     primaryStage.setScene(new Scene(root));
-    primaryStage.setHeight(480);
-    primaryStage.setWidth(640);
+    primaryStage.setHeight(380);
+    primaryStage.setWidth(380);
     primaryStage.centerOnScreen();
     primaryStage.show();
 
@@ -138,12 +164,17 @@ public class WebCamHandler extends Application {
 
   private void createTopPanel() {
 
-    int webCamCounter = 0;
-    Label lbInfoLabel = new Label("Select Your WebCam Camera");
+    // Label for camera selection
+    Label lbInfoLabel = new Label("Camera App");
+    lbInfoLabel.setFont(juliaMono);
+    lbInfoLabel.setTextFill(Color.GREY);
+
+    // Dropdown choices
     ObservableList<WebCamInfo> options = FXCollections.observableArrayList();
 
     topPane.getChildren().add(lbInfoLabel);
 
+    int webCamCounter = 0;
     for (Webcam webcam : Webcam.getWebcams()) {
       WebCamInfo webCamInfo = new WebCamInfo();
       webCamInfo.setWebCamIndex(webCamCounter);
@@ -185,13 +216,13 @@ public class WebCamHandler extends Application {
           @Override
           protected Void call() throws Exception {
 
-            if (webCam != null) {
-              disposeWebCamCamera();
+            if (webcam != null) {
+              exit();
             }
 
-            webCam = Webcam.getWebcams().get(webCamIndex);
-            webCam.setViewSize(WebcamResolution.VGA.getSize());
-            webCam.open();
+            webcam = Webcam.getWebcams().get(webCamIndex);
+            webcam.setViewSize(WebcamResolution.VGA.getSize());
+            webcam.open();
 
             startWebCamStream();
 
@@ -204,7 +235,7 @@ public class WebCamHandler extends Application {
     webCamThread.start();
 
     bottomCameraControlPane.setDisable(false);
-    btnCamreaStart.setDisable(true);
+    btnCameraResume.setDisable(true);
   }
 
   protected void startWebCamStream() {
@@ -222,7 +253,7 @@ public class WebCamHandler extends Application {
 
             while (!stopCamera) {
               try {
-                if ((img = webCam.getImage()) != null) {
+                if ((img = webcam.getImage()) != null) {
 
                   ref.set(SwingFXUtils.toFXImage(img, ref.get()));
                   img.flush();
@@ -253,8 +284,12 @@ public class WebCamHandler extends Application {
 
   private void createCameraControls() {
 
-    btnCamreaStop = new Button();
-    btnCamreaStop.setOnAction(
+    juliaMono = Font.loadFont(getClass().getResourceAsStream("/fonts/JuliaMono-Regular.ttf"), 12);
+
+    // Button to take picture
+    btnCameraPicture = new Button();
+    btnCameraPicture.setFont(juliaMono);
+    btnCameraPicture.setOnAction(
         new EventHandler<ActionEvent>() {
 
           @Override
@@ -267,59 +302,61 @@ public class WebCamHandler extends Application {
             }
           }
         });
-    btnCamreaStop.setText("Click picture");
-    btnCamreaStart = new Button();
-    btnCamreaStart.setOnAction(
+    btnCameraPicture.setText("Snap");
+
+    // Button to start the camera
+    btnCameraResume = new Button();
+    btnCameraResume.setOnAction(
         new EventHandler<ActionEvent>() {
 
           @Override
           public void handle(ActionEvent arg0) {
-            startWebCamCamera();
+            resumeThread();
           }
         });
-    btnCamreaStart.setText("Start Camera");
-    btnCameraDispose = new Button();
-    btnCameraDispose.setText("Quit");
-    btnCameraDispose.setOnAction(
+    btnCameraResume.setFont(juliaMono);
+    btnCameraResume.setText("Resume thread");
+
+    // Button to close the app
+    btnCameraExit = new Button();
+    btnCameraExit.setFont(juliaMono);
+    btnCameraExit.setText("Quit");
+    btnCameraExit.setOnAction(
         new EventHandler<ActionEvent>() {
 
           @Override
           public void handle(ActionEvent arg0) {
-            disposeWebCamCamera();
+            exit();
           }
         });
-    bottomCameraControlPane.getChildren().add(btnCamreaStart);
-    bottomCameraControlPane.getChildren().add(btnCamreaStop);
-    bottomCameraControlPane.getChildren().add(btnCameraDispose);
-  }
-
-  protected void disposeWebCamCamera() {
-    stopCamera = true;
-    webCam.close();
-    btnCamreaStart.setDisable(true);
-    btnCamreaStop.setDisable(true);
-    System.exit(0);
-  }
-
-  protected void startWebCamCamera() {
-    stopCamera = false;
-    startWebCamStream();
-    btnCamreaStop.setDisable(false);
-    btnCamreaStart.setDisable(true);
+    bottomCameraControlPane.getChildren().add(btnCameraResume);
+    bottomCameraControlPane.getChildren().add(btnCameraPicture);
+    bottomCameraControlPane.getChildren().add(btnCameraExit);
   }
 
   protected void clickPicture() throws IOException {
-    System.out.println(imageName.append(java.time.LocalTime.now()).toString());
+    LocalDateTime date = java.time.LocalDateTime.now();
+    String dateStr = date.format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"));
     ImageIO.write(
-        webCam.getImage(),
+        webcam.getImage(),
         "JPG",
-        new File(imageName.append(java.time.LocalTime.now()).append(".jpg").toString()));
+        new File(imageName.append("Camera-").append(dateStr).append(".jpg").toString()));
     stopCamera = true;
-    btnCamreaStart.setDisable(false);
-    btnCamreaStop.setDisable(true);
+    btnCameraResume.setDisable(false);
+    btnCameraPicture.setDisable(true);
   }
 
-  public static void main(String[] args) {
-    launch(args);
+  protected void resumeThread() {
+    startWebCamStream();
+    btnCameraPicture.setDisable(false);
+    btnCameraResume.setDisable(true);
+  }
+
+  protected void exit() {
+    stopCamera = true;
+    webcam.close();
+    btnCameraResume.setDisable(true);
+    btnCameraPicture.setDisable(true);
+    System.exit(0);
   }
 }
