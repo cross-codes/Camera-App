@@ -2,7 +2,7 @@ package com.github.cross;
 
 public class App {
   public static void main(String[] args) {
-    WebCamHandler.imageLocation = "/home/cross/Pictures/Camera/";
+    WebCamHandler.imageLocation = "/Users/ayushrao/Akj-Camera";
     WebCamHandler.main(args);
   }
 }

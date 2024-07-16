@@ -12,7 +12,8 @@ Current version: 2.0
 
 # Build instructions
 
-This app is purely made in Java, and is hence universally compatible.
+This app is purely made in Java, and is hence universally compatible with any
+x86-64 system.
 Before you build the app, there are some necessary manual changes to the
 contents of the file `📁src/main/java/com/github/cross/App.java`,
 
